@@ -2,11 +2,11 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/app/lib/supabaseClient';
 import { motion } from 'framer-motion';
 import * as XLSX from 'xlsx';
-import { UserPlus, Download, CheckCircle, XCircle, Trash2, Share2 } from 'lucide-react';
+import { UserPlus, Download, CheckCircle, XCircle, Trash2, Share2, Upload } from 'lucide-react';
 import GuestQrCode from '@/components/GuestQrCode';
 
 type Guest = {
@@ -26,6 +26,8 @@ export default function AdminPage() {
   const [newGuest, setNewGuest] = useState({ nama: '', email: '', no_hp: '' });
   // State untuk status loading
   const [loading, setLoading] = useState(true);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // useEffect untuk mengambil data awal dan setup realtime
   useEffect(() => {
@@ -71,17 +73,17 @@ export default function AdminPage() {
 
     const { data, error } = await supabase
       .from('tamu')
-      .insert([{ 
-        nama: newGuest.nama, 
+      .insert([{
+        nama: newGuest.nama,
         email: newGuest.email || null,
         no_hp: newGuest.no_hp || null
       }])
-      .select(); 
+      .select();
 
     if (error) {
       alert('Gagal menambahkan tamu: ' + error.message);
     } else if (data) {
-      fetchGuests(); 
+      fetchGuests();
       setNewGuest({ nama: '', email: '', no_hp: '' }); // Reset form
     }
   };
@@ -130,6 +132,64 @@ export default function AdminPage() {
     XLSX.writeFile(workbook, "Daftar_Hadir_Acara.xlsx");
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      try {
+        const data = event.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+        if (json.length === 0) {
+          throw new Error("File Excel kosong atau format tidak sesuai.");
+        }
+
+        // Proses data JSON dan masukkan ke Supabase
+        processExcelData(json);
+
+      } catch (err) {
+        console.error(err);
+        alert("Gagal memproses file Excel. Pastikan formatnya benar.");
+      }
+    };
+
+    reader.onerror = () => {
+      alert("Gagal membaca file.");
+    };
+
+    reader.readAsBinaryString(file);
+    
+    e.target.value = '';
+  };
+
+  const processExcelData = async (data: any[]) => {
+    const guestsToInsert = data.map(row => ({
+      nama: row.Nama,          
+      email: row.Email || null, 
+      no_hp: row.NoHP || null  
+    }));
+
+    if (!confirm(`Anda akan menambahkan ${guestsToInsert.length} tamu baru. Lanjutkan?`)) {
+      return;
+    }
+
+    // Kirim data ke Supabase
+    const { error } = await supabase.from('tamu').insert(guestsToInsert);
+
+    if (error) {
+      alert("Gagal menyimpan data tamu: " + error.message);
+    } else {
+      alert(`${guestsToInsert.length} tamu berhasil ditambahkan!`);
+      fetchGuests(); // Refresh daftar tamu
+    }
+  };
+
   // Kalkulasi jumlah tamu yang hadir dan total
   const hadirCount = guests.filter(g => g.hadir).length;
   const totalCount = guests.length;
@@ -148,6 +208,20 @@ export default function AdminPage() {
               <p className="text-2xl font-bold">{totalCount}</p>
               <p className="text-sm">Total Tamu</p>
             </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors"
+            >
+              <Upload size={18} />
+              Upload Excel
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept=".xlsx, .xls"
+              onChange={handleFileUpload}
+            />
             <button
               onClick={exportToExcel}
               className="flex items-center gap-2 bg-brand-blue hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors"
