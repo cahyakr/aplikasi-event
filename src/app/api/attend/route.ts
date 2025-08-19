@@ -1,52 +1,38 @@
-// app/api/attend/[guestId]/route.ts
+// src/app/api/attend/route.ts
+
 import { supabase } from '@/app/lib/supabaseClient';
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
-export async function POST(
-  request: Request,
-  { params }: { params: { guestId: string } }
-) {
-  const { guestId } = params;
+export const dynamic = 'force-dynamic';
 
-  if (!guestId) {
-    return NextResponse.json({ error: 'ID tamu tidak ditemukan' }, { status: 400 });
-  }
-
+// Pastikan signature fungsinya seperti ini, hanya menerima 'request'
+export async function POST(request: NextRequest) {
   try {
-    // 1. Cek dulu apakah tamu sudah hadir
-    const { data: existingGuest, error: fetchError } = await supabase
-      .from('tamu')
-      .select('nama, hadir')
-      .eq('id', guestId)
-      .single();
+    // Ambil data dari body request, bukan dari params
+    const { nama, email, no_hp } = await request.json();
 
-    if (fetchError || !existingGuest) {
-      return NextResponse.json({ error: 'Tamu tidak valid' }, { status: 404 });
-    }
-
-    if (existingGuest.hadir) {
-      return NextResponse.json(
-        { message: `${existingGuest.nama} sudah melakukan absensi sebelumnya.`, status: 'already_present', name: existingGuest.nama },
-        { status: 200 }
-      );
+    if (!nama) {
+      return NextResponse.json({ message: 'Nama tidak boleh kosong.' }, { status: 400 });
     }
 
     const { data, error } = await supabase
       .from('tamu')
-      .update({ hadir: true, waktu_hadir: new Date().toISOString() })
-      .eq('id', guestId)
-      .select('nama')
+      .insert([{ 
+        nama, 
+        email: email || null,
+        no_hp: no_hp || null
+      }])
+      .select()
       .single();
 
     if (error) {
       throw error;
     }
 
-    return NextResponse.json(
-      { message: `Selamat datang, ${data.nama}!`, status: 'success', name: data.nama },
-      { status: 200 }
-    );
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true, data });
+
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Terjadi kesalahan tidak diketahui.';
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }

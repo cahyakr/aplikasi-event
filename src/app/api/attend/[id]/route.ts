@@ -1,19 +1,21 @@
 // src/app/api/attend/[id]/route.ts
 
 import { supabase } from '@/app/lib/supabaseClient';
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  const guestId = params.id;
+// PERHATIKAN: HANYA ADA SATU ARGUMEN, YAITU 'request'.
+// Argumen '{ params }' sudah dihapus seluruhnya.
+export async function GET(request: NextRequest) {
+  
+  // KITA MENGAMBIL ID DARI URL REQUEST, BUKAN DARI PARAMS
+  const url = new URL(request.url);
+  const pathParts = url.pathname.split('/');
+  const guestId = pathParts[pathParts.length - 1];
+
   const host = request.headers.get('host');
   const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-  
-  // Tujuan redirect kita adalah halaman /result yang baru
   const resultUrl = new URL(`${protocol}://${host}/result`);
 
   if (!guestId) {
@@ -23,7 +25,6 @@ export async function GET(
   }
 
   try {
-    // Cek dulu data tamu yang ada
     const { data: currentGuest, error: fetchError } = await supabase
       .from('tamu')
       .select('nama, hadir')
@@ -34,14 +35,12 @@ export async function GET(
       throw new Error('Tamu tidak ditemukan.');
     }
 
-    // Jika sudah hadir, redirect dengan status berbeda
     if (currentGuest.hadir) {
       resultUrl.searchParams.set('status', 'already_scanned');
       resultUrl.searchParams.set('nama', currentGuest.nama);
       return NextResponse.redirect(resultUrl);
     }
     
-    // Jika belum hadir, baru lakukan update
     const { error: updateError } = await supabase
       .from('tamu')
       .update({ hadir: true, waktu_hadir: new Date().toISOString() })
@@ -53,9 +52,10 @@ export async function GET(
     resultUrl.searchParams.set('nama', currentGuest.nama);
     return NextResponse.redirect(resultUrl);
 
-  } catch (err: any) {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Terjadi kesalahan tidak diketahui.';
     resultUrl.searchParams.set('status', 'error');
-    resultUrl.searchParams.set('message', err.message);
+    resultUrl.searchParams.set('message', message);
     return NextResponse.redirect(resultUrl);
   }
 }

@@ -3,51 +3,36 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from '@/app/lib/supabaseClient';
 import { motion } from 'framer-motion';
 import * as XLSX from 'xlsx';
-import { UserPlus, Download, CheckCircle, XCircle, Trash2, Share2, Upload } from 'lucide-react';
+import { UserPlus, Download, CheckCircle, XCircle, Trash2, Share2, Upload, QrCode } from 'lucide-react';
 import GuestQrCode from '@/components/GuestQrCode';
+import QrScanner from '@/components/QrScanner';
 
-type Guest = {
-  id: string;
-  nama: string;
-  email: string | null;
-  no_hp: string | null;
-  hadir: boolean;
-  waktu_hadir: string | null;
-  created_at: string;
-};
+type Guest = { id: string; nama: string; email: string | null; no_hp: string | null; hadir: boolean; waktu_hadir: string | null; created_at: string; rsvp: string | null; komentar: string | null; };
+type ExcelRow = { Nama: string; Email?: string; NoHP?: string; };
 
 export default function AdminPage() {
-  // State untuk menyimpan daftar tamu
   const [guests, setGuests] = useState<Guest[]>([]);
-  // State untuk form tambah tamu baru
   const [newGuest, setNewGuest] = useState({ nama: '', email: '', no_hp: '' });
-  // State untuk status loading
   const [loading, setLoading] = useState(true);
-
+  const [origin, setOrigin] = useState('');
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // useEffect untuk mengambil data awal dan setup realtime
   useEffect(() => {
+    if (typeof window !== 'undefined') setOrigin(window.location.origin);
     fetchGuests();
-
-    const channel = supabase.channel('realtime-tamu');
-
-    (channel as any).on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'tamu' },
-      (payload: any) => {
+    const channel: RealtimeChannel = supabase.channel('realtime-tamu');
+    channel.on('postgres_changes', { event: '*', schema: 'public', table: 'tamu' },
+      (payload: RealtimePostgresChangesPayload<{ [key: string]: any }>) => {
         console.log('Perubahan terdeteksi!', payload);
-        fetchGuests(); // Ambil ulang data jika ada perubahan
+        fetchGuests();
       }
     ).subscribe();
-
-    // Cleanup channel saat komponen di-unmount
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   // Fungsi untuk mengambil data tamu dari Supabase
@@ -71,23 +56,31 @@ export default function AdminPage() {
     e.preventDefault();
     if (!newGuest.nama) return;
 
-    const { data, error } = await supabase
-      .from('tamu')
-      .insert([{
-        nama: newGuest.nama,
-        email: newGuest.email || null,
-        no_hp: newGuest.no_hp || null
-      }])
-      .select();
+    try {
+      const response = await fetch('/api/attend', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newGuest),
+      });
 
-    if (error) {
-      alert('Gagal menambahkan tamu: ' + error.message);
-    } else if (data) {
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+      
+      // Jika berhasil
       fetchGuests();
-      setNewGuest({ nama: '', email: '', no_hp: '' }); // Reset form
+      setNewGuest({ nama: '', email: '', no_hp: '' });
+
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Terjadi kesalahan';
+        alert('Gagal menambahkan tamu: ' + message);
     }
   };
-
+  
   const handleDeleteGuest = async (id: string) => {
     if (confirm('Apakah Anda yakin ingin menghapus tamu ini?')) {
       const { error } = await supabase.from('tamu').delete().eq('id', id);
@@ -121,7 +114,8 @@ export default function AdminPage() {
   };
 
   // Fungsi untuk ekspor data ke file Excel
-  const exportToExcel = () => {
+   const exportToExcel = () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const dataToExport = guests.map(({ id, created_at, no_hp, ...rest }) => ({
       ...rest,
       waktu_hadir: rest.waktu_hadir ? new Date(rest.waktu_hadir).toLocaleString('id-ID') : 'Belum Hadir',
@@ -135,58 +129,38 @@ export default function AdminPage() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
-
     reader.onload = (event) => {
       try {
         const data = event.target?.result;
         const workbook = XLSX.read(data, { type: 'binary' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const json: any[] = XLSX.utils.sheet_to_json(worksheet);
-
-        if (json.length === 0) {
-          throw new Error("File Excel kosong atau format tidak sesuai.");
-        }
-
-        // Proses data JSON dan masukkan ke Supabase
+        const json: ExcelRow[] = XLSX.utils.sheet_to_json(worksheet);
+        if (json.length === 0) throw new Error("File Excel kosong.");
         processExcelData(json);
-
       } catch (err) {
         console.error(err);
-        alert("Gagal memproses file Excel. Pastikan formatnya benar.");
+        alert("Gagal memproses file Excel.");
       }
     };
-
-    reader.onerror = () => {
-      alert("Gagal membaca file.");
-    };
-
     reader.readAsBinaryString(file);
-    
-    e.target.value = '';
+    if(e.target) e.target.value = '';
   };
 
-  const processExcelData = async (data: any[]) => {
+  const processExcelData = async (data: ExcelRow[]) => {
     const guestsToInsert = data.map(row => ({
-      nama: row.Nama,          
-      email: row.Email || null, 
-      no_hp: row.NoHP || null  
+      nama: row.Nama,
+      email: row.Email || null,
+      no_hp: row.NoHP || null
     }));
-
-    if (!confirm(`Anda akan menambahkan ${guestsToInsert.length} tamu baru. Lanjutkan?`)) {
-      return;
-    }
-
-    // Kirim data ke Supabase
+    if (!confirm(`Anda akan menambahkan ${guestsToInsert.length} tamu baru. Lanjutkan?`)) return;
     const { error } = await supabase.from('tamu').insert(guestsToInsert);
-
     if (error) {
-      alert("Gagal menyimpan data tamu: " + error.message);
+      alert("Gagal menyimpan data: " + error.message);
     } else {
       alert(`${guestsToInsert.length} tamu berhasil ditambahkan!`);
-      fetchGuests(); // Refresh daftar tamu
+      fetchGuests();
     }
   };
 

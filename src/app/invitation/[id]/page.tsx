@@ -4,13 +4,13 @@ import { supabase } from "@/app/lib/supabaseClient";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { MapPin, Calendar, Clock } from 'lucide-react';
+import { MapPin, Calendar, MessageSquare, Clock } from 'lucide-react';
 import InvitationCover from "@/components/InvitationCover";
 import RsvpForm from "@/components/RsvpForm";
 import GuestQrCode from "@/components/GuestQrCode";
 
+// Fungsi untuk mengambil data tamu spesifik
 async function getGuestData(guestId: string) {
-  // Ambil data baru: rsvp dan komentar
   const { data: guest } = await supabase
     .from('tamu')
     .select('id, nama, rsvp, komentar')
@@ -19,14 +19,39 @@ async function getGuestData(guestId: string) {
   return guest;
 }
 
-export default async function InvitationPage({ params }: { params: { id: string } }) {
-  const guest = await getGuestData(params.id);
+// Fungsi untuk mengambil semua komentar
+async function getComments() {
+  const { data: comments, error } = await supabase
+    .from('tamu')
+    .select('nama, komentar, rsvp')
+    .not('komentar', 'is', null)
+    .neq('komentar', '')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Gagal mengambil komentar:", error);
+    return [];
+  }
+  return comments;
+}
+
+// Definisikan tipe untuk props halaman (FIX UNTUK BUILD ERROR)
+interface PageProps {
+  params: { id: string };
+}
+
+export default async function InvitationPage({ params }: PageProps) {
+  const guestId = params.id;
+  
+  const guest = await getGuestData(guestId);
+  const comments = await getComments();
+
   if (!guest) notFound();
 
   const host = (await headers()).get('host');
   const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
   const scanUrl = `${protocol}://${host}/api/attend/${guest.id}`;
-  const gmapsUrl = "https://maps.app.goo.gl/NAMA_LOKASI_ANDA"; // <-- GANTI DENGAN LINK GOOGLE MAPS ANDA
+  const gmapsUrl = "https://maps.app.goo.gl/your-link-here"; // <-- GANTI DENGAN LINK GOOGLE MAPS ANDA
 
   return (
     <InvitationCover guestName={guest.nama}>
@@ -39,7 +64,7 @@ export default async function InvitationPage({ params }: { params: { id: string 
               <Image src="/logo.png" alt="Company Logo" layout="fill" objectFit="contain" />
             </div>
             <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-400 font-serif">Annual Gala Dinner 2025</h1>
-            <p className="text-lg text-gray-300 mt-4">"Celebrating a Decade of Innovation"</p>
+            <p className="text-lg text-gray-300 mt-4">&ldquo;Celebrating a Decade of Innovation&rdquo;</p>
           </section>
 
           <section className="space-y-8 mb-16">
@@ -74,15 +99,36 @@ export default async function InvitationPage({ params }: { params: { id: string 
             </div>
           </section>
           
+          <section className="mb-16">
+            <h2 className="text-3xl font-bold text-yellow-400 text-center mb-8 flex items-center justify-center gap-3">
+              <MessageSquare />
+              Ucapan & Doa
+            </h2>
+            <div className="max-w-2xl mx-auto bg-black p-4 sm:p-6 rounded-lg max-h-80 overflow-y-auto space-y-4">
+              {comments.length > 0 ? (
+                comments.map((comment, index) => (
+                  <div key={index} className="bg-gray-800 p-4 rounded-md shadow">
+                    <div className="flex items-center mb-2">
+                      <p className="font-bold text-lg text-white">{comment.nama}</p>
+                      {comment.rsvp === 'Hadir' && (
+                        <span className="ml-2 text-xs bg-green-500 text-white font-semibold px-2 py-0.5 rounded-full">Hadir</span>
+                      )}
+                    </div>
+                    <p className="text-gray-300 italic">"{comment.komentar}"</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-gray-400 py-8">Jadilah yang pertama memberikan ucapan!</p>
+              )}
+            </div>
+          </section>
+
           <section className="mb-16 bg-black p-8 rounded-lg shadow-lg">
              <RsvpForm guestId={guest.id} initialRsvp={guest.rsvp} initialComment={guest.komentar} />
           </section>
           
           <section id="qr-section" className="pt-12 text-center">
             <h3 className="text-3xl font-bold text-yellow-400 mb-6">Kode QR Kehadiran Anda</h3>
-            <p className="text-gray-400 max-w-xl mx-auto mb-8">
-              Mohon tunjukkan kode QR ini kepada petugas di meja registrasi.
-            </p>
             <GuestQrCode scanUrl={scanUrl} />
           </section>
 
