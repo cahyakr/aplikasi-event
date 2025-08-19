@@ -6,6 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, Loader, AlertTriangle } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default function ResultPage() {
   const searchParams = useSearchParams();
   const status = searchParams.get('status');
