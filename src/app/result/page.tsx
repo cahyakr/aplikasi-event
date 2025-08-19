@@ -1,23 +1,22 @@
 // src/app/result/page.tsx
-
 'use client';
 
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, Loader, AlertTriangle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
-export default function ResultPage() {
+function ResultPageContent() {
   const searchParams = useSearchParams();
   const status = searchParams.get('status');
   const guestName = searchParams.get('nama');
   const message = searchParams.get('message');
-  
+
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Memberi sedikit jeda animasi agar tidak terasa instan
     const timer = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timer);
   }, []);
@@ -70,5 +69,17 @@ export default function ResultPage() {
         {renderContent()}
       </div>
     </div>
+  );
+}
+
+export default function ResultPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
+        Loading...
+      </div>
+    }>
+      <ResultPageContent />
+    </Suspense>
   );
 }
