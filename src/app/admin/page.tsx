@@ -11,7 +11,7 @@ import { UserPlus, Download, CheckCircle, XCircle, Trash2, Share2, Upload, QrCod
 import GuestQrCode from '@/components/GuestQrCode';
 import QrScanner from '@/components/QrScanner';
 
-type Guest = { id: string; nama: string; email: string | null; no_hp: string | null; hadir: boolean; waktu_hadir: string | null; created_at: string; rsvp: string | null; komentar: string | null; };
+type Guest = { id: string; nama: string; email: string | null; no_hp: string | null; hadir: boolean; waktu_hadir: string | null; created_at: string; rsvp: string | null; komentar: string | null; slug: string; };
 type ExcelRow = { Nama: string; Email?: string; NoHP?: string; };
 
 export default function AdminPage() {
@@ -21,6 +21,18 @@ export default function AdminPage() {
   const [origin, setOrigin] = useState('');
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const slugify = (text: string) => {
+    return text
+      .toString()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+  };
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') setOrigin(window.location.origin);
@@ -39,7 +51,7 @@ export default function AdminPage() {
   const fetchGuests = async () => {
     const { data, error } = await supabase
       .from('tamu')
-      .select('*')
+      .select('*, slug')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -56,31 +68,27 @@ export default function AdminPage() {
     e.preventDefault();
     if (!newGuest.nama) return;
 
-    try {
-      const response = await fetch('/api/attend', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newGuest),
-      });
+    const newSlug = slugify(newGuest.nama);
 
-      const result = await response.json();
+    const { error } = await supabase.from('tamu').insert([{
+      nama: newGuest.nama,
+      email: newGuest.email || null,
+      no_hp: newGuest.no_hp || null,
+      slug: newSlug
+    }]);
 
-      if (!result.success) {
-        throw new Error(result.message);
+    if (error) {
+      if (error.message.includes('duplicate key value violates unique constraint "tamu_slug_key"')) {
+        alert(`Gagal: Tamu dengan nama "${newGuest.nama}" sudah ada. Silakan gunakan nama yang sedikit berbeda.`);
+      } else {
+        alert('Gagal menambahkan tamu: ' + error.message);
       }
-      
-      // Jika berhasil
+    } else {
       fetchGuests();
       setNewGuest({ nama: '', email: '', no_hp: '' });
-
-    } catch (error) {
-        const message = error instanceof Error ? error.message : 'Terjadi kesalahan';
-        alert('Gagal menambahkan tamu: ' + message);
     }
   };
-  
+
   const handleDeleteGuest = async (id: string) => {
     if (confirm('Apakah Anda yakin ingin menghapus tamu ini?')) {
       const { error } = await supabase.from('tamu').delete().eq('id', id);
@@ -95,9 +103,11 @@ export default function AdminPage() {
   };
 
   const handleShareGuest = (guest: Guest) => {
-    if (!guest.nama || !guest.id) return;
-
-    const invitationUrl = `${window.location.origin}/invitation/${guest.id}`;
+    if (!origin || !guest.slug) {
+      alert("Halaman belum siap atau data tamu tidak lengkap.");
+      return;
+    }
+    const invitationUrl = `${origin}/invitation/${guest.slug}`;
     const message = `Kepada Yth. ${guest.nama},\n\nAnda diundang ke acara kami. Silakan buka link berikut untuk melihat QR code undangan Anda:\n\n${invitationUrl}`;
     const encodedMessage = encodeURIComponent(message);
     let whatsappUrl = '';
@@ -114,7 +124,7 @@ export default function AdminPage() {
   };
 
   // Fungsi untuk ekspor data ke file Excel
-   const exportToExcel = () => {
+  const exportToExcel = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const dataToExport = guests.map(({ id, created_at, no_hp, ...rest }) => ({
       ...rest,
@@ -145,14 +155,15 @@ export default function AdminPage() {
       }
     };
     reader.readAsBinaryString(file);
-    if(e.target) e.target.value = '';
+    if (e.target) e.target.value = '';
   };
 
   const processExcelData = async (data: ExcelRow[]) => {
     const guestsToInsert = data.map(row => ({
       nama: row.Nama,
       email: row.Email || null,
-      no_hp: row.NoHP || null
+      no_hp: row.NoHP || null,
+      slug: slugify(row.Nama)
     }));
     if (!confirm(`Anda akan menambahkan ${guestsToInsert.length} tamu baru. Lanjutkan?`)) return;
     const { error } = await supabase.from('tamu').insert(guestsToInsert);
@@ -252,6 +263,7 @@ export default function AdminPage() {
                 <thead className="bg-gray-800">
                   <tr>
                     <th className="p-4">Nama</th>
+                    <th className="p-4 text-yellow-400">Slug (Untuk Debug)</th>
                     <th className="p-4">Status</th>
                     <th className="p-4">Waktu Hadir</th>
                     <th className="p-4 text-center">QR Code</th>
@@ -268,6 +280,7 @@ export default function AdminPage() {
                       className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors"
                     >
                       <td className="p-4 font-semibold">{guest.nama}</td>
+                      <td className="p-4 text-xs text-yellow-400 font-mono">{guest.slug || '-- KOSONG --'}</td> {/* <-- TAMBAHKAN INI */}
                       <td className="p-4">
                         {guest.hadir ? (
                           <span className="flex items-center gap-2 text-green-400 font-bold">
@@ -280,10 +293,21 @@ export default function AdminPage() {
                         )}
                       </td>
                       <td className="p-4">
-                        {guest.waktu_hadir ? new Date(guest.waktu_hadir).toLocaleString('id-ID') : '-'}
+                        {guest.waktu_hadir
+                          ? new Date(guest.waktu_hadir).toLocaleString('id-ID', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false,
+                            timeZone: 'Asia/Jakarta', 
+                          }).replace(/\./g, ':')
+                          : '-'}
                       </td>
                       <td className="p-4 flex justify-center">
-                        <GuestQrCode scanUrl={`${window.location.origin}/api/attend/${guest.id}`} />
+                        <GuestQrCode scanUrl={`${window.location.origin}/api/attend/${guest.id}`} size={50} />
                       </td>
                       <td className="p-4 text-center">
                         <div className="flex justify-center items-center gap-4">

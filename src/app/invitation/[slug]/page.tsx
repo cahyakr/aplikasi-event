@@ -1,4 +1,4 @@
-// src/app/invitation/[id]/page.tsx
+// src/app/invitation/[slug]/page.tsx
 
 import { supabase } from "@/app/lib/supabaseClient";
 import { headers } from "next/headers";
@@ -10,11 +10,11 @@ import RsvpForm from "@/components/RsvpForm";
 import GuestQrCode from "@/components/GuestQrCode";
 
 // Fungsi untuk mengambil data tamu spesifik
-async function getGuestData(guestId: string) {
+async function getGuestData(guestSlug: string) {
   const { data: guest } = await supabase
     .from('tamu')
-    .select('id, nama, rsvp, komentar')
-    .eq('id', guestId)
+    .select('id, nama, rsvp, komentar, slug')
+    .eq('slug', guestSlug)
     .single();
   return guest;
 }
@@ -35,15 +35,15 @@ async function getComments() {
   return comments;
 }
 
-// Definisikan tipe untuk props halaman (FIX UNTUK BUILD ERROR)
+
 interface PageProps {
-  params: { id: string };
+  params: { slug: string };
 }
 
 export default async function InvitationPage({ params }: PageProps) {
-  const guestId = params.id;
+  const guestSlug = params.slug;
   
-  const guest = await getGuestData(guestId);
+  const guest = await getGuestData(guestSlug);
   const comments = await getComments();
 
   if (!guest) notFound();
@@ -124,7 +124,7 @@ export default async function InvitationPage({ params }: PageProps) {
           </section>
 
           <section className="mb-16 bg-black p-8 rounded-lg shadow-lg">
-             <RsvpForm guestId={guest.id} initialRsvp={guest.rsvp} initialComment={guest.komentar} />
+             <RsvpForm guestId={guest.id} guestSlug={guest.slug}  initialRsvp={guest.rsvp} initialComment={guest.komentar} />
           </section>
           
           <section id="qr-section" className="pt-12 text-center">
