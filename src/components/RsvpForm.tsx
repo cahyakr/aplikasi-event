@@ -27,14 +27,14 @@ export default function RsvpForm({ guestId, guestSlug, initialRsvp, initialComme
   console.log("Hasil perbandingan (setelah trim):", initialRsvp?.trim() !== 'Belum konfirmasi');
   console.log("------------------------------------");
   // ---------------------
-  
+
   const router = useRouter(); // <-- 2. PANGGIL useRouter
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   // LOGIKA YANG BENAR: Tampilkan "Terima Kasih" jika status BUKAN 'Belum konfirmasi'
-  if (initialRsvp?.trim() && initialRsvp?.trim() !== 'Belum konfirmasi') {
+  if (initialRsvp?.trim() && initialRsvp?.trim() !== "Belum konfirmasi") {
     return (
       <div className="text-center p-8 bg-green-900/50 rounded-lg">
         <h3 className="text-2xl font-bold text-green-400">Terima Kasih!</h3>

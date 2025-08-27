@@ -7,8 +7,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Absensi Acara",
-  description: "Sistem absensi acara dengan QR Code",
+  title: "FORKOM YKKBI 2025",
+  description: "Forum Komunikasi Anak Perusahaan YKKBI",
 };
 
 export default function RootLayout({
@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.className} overflow-x-hidden`}>{children}</body>
     </html>
   );
 }

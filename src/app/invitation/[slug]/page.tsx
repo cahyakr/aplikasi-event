@@ -42,7 +42,7 @@ interface PageProps {
 
 export default async function InvitationPage({ params }: PageProps) {
   const guestSlug = params.slug;
-  
+
   const guest = await getGuestData(guestSlug);
   const comments = await getComments();
 
@@ -57,10 +57,9 @@ export default async function InvitationPage({ params }: PageProps) {
     <InvitationCover guestName={guest.nama}>
       <div className="min-h-screen bg-gray-900 text-white font-sans">
         <main className="container mx-auto px-4 py-12 max-w-3xl">
-          
+
           <section className="text-center mb-12">
             <div className="relative w-32 h-16 mx-auto mb-6">
-              {/* Pastikan Anda punya logo.png di folder /public */}
               <Image src="/logo.png" alt="Company Logo" layout="fill" objectFit="contain" />
             </div>
             <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-400 font-serif">Annual Gala Dinner 2025</h1>
@@ -98,35 +97,49 @@ export default async function InvitationPage({ params }: PageProps) {
               <div className="flex gap-4"><Clock className="w-6 h-6 text-yellow-400 mt-1" /><p><strong className="font-bold">21:00 - 21:30:</strong> Penyerahan Penghargaan</p></div>
             </div>
           </section>
-          
+
           <section className="mb-16">
             <h2 className="text-3xl font-bold text-yellow-400 text-center mb-8 flex items-center justify-center gap-3">
               <MessageSquare />
               Ucapan & Doa
             </h2>
-            <div className="max-w-2xl mx-auto bg-black p-4 sm:p-6 rounded-lg max-h-80 overflow-y-auto space-y-4">
+            <div className="max-w-2xl mx-auto space-y-6">
               {comments.length > 0 ? (
-                comments.map((comment, index) => (
-                  <div key={index} className="bg-gray-800 p-4 rounded-md shadow">
-                    <div className="flex items-center mb-2">
-                      <p className="font-bold text-lg text-white">{comment.nama}</p>
-                      {comment.rsvp === 'Hadir' && (
-                        <span className="ml-2 text-xs bg-green-500 text-white font-semibold px-2 py-0.5 rounded-full">Hadir</span>
-                      )}
+                comments.map((comment, index) => {
+                  // Logika untuk menentukan warna badge
+                  const rsvpStatus = {
+                    text: comment.rsvp || '?',
+                    color: 'bg-gray-500',
+                  };
+                  if (comment.rsvp === 'Hadir') {
+                    rsvpStatus.color = 'bg-green-500';
+                  } else if (comment.rsvp === 'Tidak Hadir') {
+                    rsvpStatus.text = 'Tidak Hadir';
+                    rsvpStatus.color = 'bg-red-500';
+                  }
+
+                  return (
+                    <div key={index} className="bg-black p-5 rounded-lg shadow-md border-l-4 border-yellow-400">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-bold text-lg text-white">{comment.nama}</h4>
+                        <span className={`text-xs text-white font-semibold px-3 py-1 rounded-full ${rsvpStatus.color}`}>
+                          {rsvpStatus.text}
+                        </span>
+                      </div>
+                      <p className="text-gray-300 text-sm">{comment.komentar}</p>
                     </div>
-                    <p className="text-gray-300 italic">"{comment.komentar}"</p>
-                  </div>
-                ))
+                  );
+                })
               ) : (
-                <p className="text-center text-gray-400 py-8">Jadilah yang pertama memberikan ucapan!</p>
+                <p className="text-center text-gray-400 py-8">Belum ada ucapan. Jadilah yang pertama!</p>
               )}
             </div>
           </section>
 
           <section className="mb-16 bg-black p-8 rounded-lg shadow-lg">
-             <RsvpForm guestId={guest.id} guestSlug={guest.slug}  initialRsvp={guest.rsvp} initialComment={guest.komentar} />
+            <RsvpForm guestId={guest.id} guestSlug={guest.slug} initialRsvp={guest.rsvp} initialComment={guest.komentar} />
           </section>
-          
+
           <section id="qr-section" className="pt-12 text-center">
             <h3 className="text-3xl font-bold text-yellow-400 mb-6">Kode QR Kehadiran Anda</h3>
             <GuestQrCode scanUrl={scanUrl} />
