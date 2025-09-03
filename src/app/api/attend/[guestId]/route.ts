@@ -1,4 +1,4 @@
-// src/app/api/attend/[id]/route.ts
+// src/app/api/attend/[guestId]/route.ts
 import { supabase } from '@/app/lib/supabaseClient';
 import { NextResponse } from 'next/server';
 
