@@ -263,7 +263,6 @@ export default function AdminPage() {
                 <thead className="bg-gray-800">
                   <tr>
                     <th className="p-4">Nama</th>
-                    <th className="p-4 text-yellow-400">Slug (Untuk Debug)</th>
                     <th className="p-4">Status</th>
                     <th className="p-4">Waktu Hadir</th>
                     <th className="p-4 text-center">QR Code</th>
@@ -280,7 +279,7 @@ export default function AdminPage() {
                       className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors"
                     >
                       <td className="p-4 font-semibold">{guest.nama}</td>
-                      <td className="p-4 text-xs text-yellow-400 font-mono">{guest.slug || '-- KOSONG --'}</td> {/* <-- TAMBAHKAN INI */}
+                    
                       <td className="p-4">
                         {guest.hadir ? (
                           <span className="flex items-center gap-2 text-green-400 font-bold">

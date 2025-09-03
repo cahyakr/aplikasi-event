@@ -8,6 +8,9 @@ import { MapPin, Calendar, MessageSquare, Clock } from 'lucide-react';
 import InvitationCover from "@/components/InvitationCover";
 import RsvpForm from "@/components/RsvpForm";
 import GuestQrCode from "@/components/GuestQrCode";
+import LocationMap from '@/components/LocationMap';
+import Countdown from '@/components/Countdown';
+import DownloadSection from '@/components/DownloadSection';
 
 // Fungsi untuk mengambil data tamu spesifik
 async function getGuestData(guestSlug: string) {
@@ -35,6 +38,20 @@ async function getComments() {
   return comments;
 }
 
+async function getEventDetails() {
+  const { data, error } = await supabase
+    .from('acara_settings')
+    .select('buku_saku_url, agenda_url, materi_url')
+    .limit(1) // Kita hanya butuh satu baris setting
+    .single();
+
+  if (error) {
+    console.error("Gagal mengambil detail acara:", error);
+    return { buku_saku_url: null, agenda_url: null, materi_url: null };
+  }
+  return data;
+}
+
 
 interface PageProps {
   params: { slug: string };
@@ -45,61 +62,81 @@ export default async function InvitationPage({ params }: PageProps) {
 
   const guest = await getGuestData(guestSlug);
   const comments = await getComments();
+  const eventDetailsRaw = await getEventDetails();
+  const eventDetails = JSON.parse(JSON.stringify(eventDetailsRaw));
+
 
   if (!guest) notFound();
 
   const host = (await headers()).get('host');
   const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
   const scanUrl = `${protocol}://${host}/api/attend/${guest.id}`;
-  const gmapsUrl = "https://maps.app.goo.gl/your-link-here"; // <-- GANTI DENGAN LINK GOOGLE MAPS ANDA
+  const gmapsUrl = "https://maps.app.goo.gl/4xFS13Kx4MZaG8ss5";
 
   return (
     <InvitationCover guestName={guest.nama}>
-      <div className="min-h-screen bg-gray-900 text-white font-sans">
-        <main className="container mx-auto px-4 py-12 max-w-3xl">
+      <div
+        className="min-h-screen text-gray-700 font-sans"
+        style={{
+          backgroundImage: `
+          url('/batik1.png'),    
+          url('/batik2.png'), 
+          linear-gradient(to bottom left, #28ABF9 0%, #FFFFFF 40%, #28ABF9 80%) 
+        `,
+          backgroundPosition: `
+          top right,    
+          bottom left  
+        `,
+          backgroundRepeat: `
+          no-repeat,    
+          no-repeat     
+        `,
+          backgroundSize: `
+          300px auto,   
+          300px auto,   
+          cover         
+        `,
+        }}
+      >        <main className="container mx-auto px-4 py-12 max-w-3xl">
 
           <section className="text-center mb-12">
-            <div className="relative w-32 h-16 mx-auto mb-6">
-              <Image src="/logo.png" alt="Company Logo" layout="fill" objectFit="contain" />
+            <div className="bg-white rounded-2xl shadow-lg w-32 h-32 mx-auto mb-6 flex items-center justify-center p-4">
+              <Image
+                src="/logo.png"
+                alt="Company Logo"
+                width={80}
+                height={80}
+                className="object-contain"
+              />
             </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-400 font-serif">Annual Gala Dinner 2025</h1>
-            <p className="text-lg text-gray-300 mt-4">&ldquo;Celebrating a Decade of Innovation&rdquo;</p>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-brand-primary font-serif">Forum Komunikasi Anak Perusahaan YKKBI</h1>
+            <p className="text-lg text-gray-700 mt-4">&ldquo;Outlook Perekonomian dan Bisnis: Meningkatkan Agility untuk Merespon Tantangan Perubahan
+              Lingkungan Strategis Guna Keberlanjutan Usaha&rdquo;</p>
           </section>
 
           <section className="space-y-8 mb-16">
-            <div className="bg-black p-6 rounded-lg shadow-lg flex items-center gap-4">
-              <Calendar className="w-8 h-8 text-yellow-400" />
-              <div>
-                <h3 className="font-bold text-xl">Sabtu, 16 Agustus 2025</h3>
-                <p className="text-gray-400">Pukul 19:00 WIB - Selesai</p>
+            <div className="bg-brand-primary p-6 rounded-lg shadow-lg flex items-center gap-4">
+              <div className="flex-1 flex justify-center">
+                <Countdown />
               </div>
             </div>
-            <div className="bg-black p-6 rounded-lg shadow-lg">
-              <div className="flex items-center gap-4 mb-4">
-                <MapPin className="w-8 h-8 text-yellow-400" />
-                <div>
-                  <h3 className="font-bold text-xl">The Ritz-Carlton Ballroom</h3>
-                  <p className="text-gray-400">Jl. Jenderal Sudirman Kav. 52-53, Jakarta</p>
-                </div>
-              </div>
-              <a href={gmapsUrl} target="_blank" rel="noopener noreferrer" className="inline-block w-full bg-blue-600 text-center py-3 rounded-lg hover:bg-blue-700 transition-colors">
-                Buka di Google Maps
-              </a>
-            </div>
+            <LocationMap />
+
           </section>
 
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-yellow-400 text-center mb-8">Susunan Acara</h2>
-            <div className="space-y-4 text-left max-w-md mx-auto">
-              <div className="flex gap-4"><Clock className="w-6 h-6 text-yellow-400 mt-1" /><p><strong className="font-bold">19:00 - 19:30:</strong> Registrasi & Ramah Tamah</p></div>
-              <div className="flex gap-4"><Clock className="w-6 h-6 text-yellow-400 mt-1" /><p><strong className="font-bold">19:30 - 20:00:</strong> Sambutan & Pembukaan</p></div>
-              <div className="flex gap-4"><Clock className="w-6 h-6 text-yellow-400 mt-1" /><p><strong className="font-bold">20:00 - 21:00:</strong> Makan Malam & Hiburan</p></div>
-              <div className="flex gap-4"><Clock className="w-6 h-6 text-yellow-400 mt-1" /><p><strong className="font-bold">21:00 - 21:30:</strong> Penyerahan Penghargaan</p></div>
-            </div>
+            <h2 className="text-3xl font-bold text-brand-primary text-center mb-8">Download dokumen acara</h2>
+            <DownloadSection
+              bukuSakuUrl={eventDetails.buku_saku_url}
+              agendaUrl={eventDetails.agenda_url}
+              materiUrl={eventDetails.materi_url}
+            />
           </section>
 
-          <section className="mb-16">
-            <h2 className="text-3xl font-bold text-yellow-400 text-center mb-8 flex items-center justify-center gap-3">
+
+
+          {/* <section className="mb-16">
+            <h2 className="text-3xl font-bold text-brand-primary text-center mb-8 flex items-center justify-center gap-3">
               <MessageSquare />
               Ucapan & Doa
             </h2>
@@ -119,14 +156,14 @@ export default async function InvitationPage({ params }: PageProps) {
                   }
 
                   return (
-                    <div key={index} className="bg-black p-5 rounded-lg shadow-md border-l-4 border-yellow-400">
+                    <div key={index} className="bg-white p-5 rounded-lg shadow-md border-l-4 border-brand-primary">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-bold text-lg text-white">{comment.nama}</h4>
+                        <h4 className="font-bold text-lg text-brand-primary">{comment.nama}</h4>
                         <span className={`text-xs text-white font-semibold px-3 py-1 rounded-full ${rsvpStatus.color}`}>
                           {rsvpStatus.text}
                         </span>
                       </div>
-                      <p className="text-gray-300 text-sm">{comment.komentar}</p>
+                      <p className="text-gray-900 text-sm">{comment.komentar}</p>
                     </div>
                   );
                 })
@@ -134,15 +171,21 @@ export default async function InvitationPage({ params }: PageProps) {
                 <p className="text-center text-gray-400 py-8">Belum ada ucapan. Jadilah yang pertama!</p>
               )}
             </div>
-          </section>
+          </section> */}
 
-          <section className="mb-16 bg-black p-8 rounded-lg shadow-lg">
+          {/* <section className="mb-16 bg-black p-8 rounded-lg shadow-lg">
             <RsvpForm guestId={guest.id} guestSlug={guest.slug} initialRsvp={guest.rsvp} initialComment={guest.komentar} />
-          </section>
+          </section> */}
 
           <section id="qr-section" className="pt-12 text-center">
-            <h3 className="text-3xl font-bold text-yellow-400 mb-6">Kode QR Kehadiran Anda</h3>
-            <GuestQrCode scanUrl={scanUrl} />
+            <div className="flex justify-center">
+              <div className="bg-white rounded-2xl shadow-lg p-6 inline-block">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">
+                  Kode QR Kehadiran Anda
+                </h3>
+                <GuestQrCode scanUrl={scanUrl} />
+              </div>
+            </div>
           </section>
 
         </main>

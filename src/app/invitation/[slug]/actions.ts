@@ -15,7 +15,7 @@ export async function submitRsvp(formData: FormData) {
     return { success: false, message: 'Data tidak lengkap.' };
   }
 
-  // --- PERBAIKAN ADA DI SINI ---
+  
   const { error } = await supabase
     .from('tamu')
     .update({ 
@@ -23,15 +23,13 @@ export async function submitRsvp(formData: FormData) {
       komentar: comment 
     })
     .eq('id', guestId)
-    .select(); // <-- TAMBAHKAN .select() INI UNTUK MENGEKSEKUSI QUERY
-  // -----------------------------
+    .select(); 
 
   if (error) {
     console.error('Supabase error:', error);
     return { success: false, message: 'Gagal menyimpan data.' };
   }
 
-  // Gunakan slug untuk revalidate path yang benar
   revalidatePath(`/invitation/${guestSlug}`); 
   return { success: true, message: 'Terima kasih atas konfirmasinya!' };
 }
