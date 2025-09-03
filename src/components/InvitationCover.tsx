@@ -42,7 +42,7 @@ export default function InvitationCover({ guestName, children }: Props) {
         `,
       }}
     >
-      <div className="bg-white rounded-2xl shadow-lg w-32 h-32 mx-auto mb-6 flex items-center justify-center p-4">
+      <div className=" w-32 h-32 mx-auto mb-6 flex items-center justify-center p-4">
         <Image
           src="/logo.png"
           alt="Company Logo"
@@ -51,7 +51,7 @@ export default function InvitationCover({ guestName, children }: Props) {
           className="object-contain"
         />
       </div>
-      <p className="text-lg text-gray mb-4">Tanpa mengurangi rasa hormat, Kami Mengundang dalam</p>
+      <p className="text-lg text-gray mb-4">Tanpa mengurangi rasa hormat, Kami Mengundang dalam acara</p>
       <h1 className="text-4xl font-serif text-brand-primary font-bold mb-8">Forum Komunikasi Anak Perusahaan YKKBI</h1>
 
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">

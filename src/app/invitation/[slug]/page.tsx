@@ -16,7 +16,7 @@ import DownloadSection from '@/components/DownloadSection';
 async function getGuestData(guestSlug: string) {
   const { data: guest } = await supabase
     .from('tamu')
-    .select('id, nama, rsvp, komentar, slug')
+    .select('id, nama, rsvp, komentar, slug, nama_perusahaan, no_meja')
     .eq('slug', guestSlug)
     .single();
   return guest;
@@ -100,7 +100,7 @@ export default async function InvitationPage({ params }: PageProps) {
       >        <main className="container mx-auto px-4 py-12 max-w-3xl">
 
           <section className="text-center mb-12">
-            <div className="bg-white rounded-2xl shadow-lg w-32 h-32 mx-auto mb-6 flex items-center justify-center p-4">
+            <div className=" w-32 h-32 mx-auto mb-6 flex items-center justify-center p-4">
               <Image
                 src="/logo.png"
                 alt="Company Logo"
