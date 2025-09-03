@@ -41,13 +41,13 @@ async function getComments() {
 async function getEventDetails() {
   const { data, error } = await supabase
     .from('acara_settings')
-    .select('buku_saku_url, agenda_url, materi_url')
+    .select('buku_saku_url, agenda_url')
     .limit(1) // Kita hanya butuh satu baris setting
     .single();
 
   if (error) {
     console.error("Gagal mengambil detail acara:", error);
-    return { buku_saku_url: null, agenda_url: null, materi_url: null };
+    return { buku_saku_url: null, agenda_url: null };
   }
   return data;
 }
@@ -129,7 +129,7 @@ export default async function InvitationPage({ params }: PageProps) {
             <DownloadSection
               bukuSakuUrl={eventDetails.buku_saku_url}
               agendaUrl={eventDetails.agenda_url}
-              materiUrl={eventDetails.materi_url}
+              guestSlug={guest.slug}
             />
           </section>
 

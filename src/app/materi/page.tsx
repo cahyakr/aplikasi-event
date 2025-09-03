@@ -26,8 +26,10 @@ async function getMateriList(): Promise<Materi[]> {
     return data;
 }
 
-export default async function MateriPage() {
+export default async function MateriPage({ searchParams }: { searchParams: { from?: string } }) {
     const daftarMateri = await getMateriList();
+    const guestSlug = searchParams.from;
+    const backUrl = guestSlug ? `/invitation/${guestSlug}` : '/';
 
     return (
         <div
@@ -98,8 +100,8 @@ export default async function MateriPage() {
                 </section>
 
                 <div className="text-center mt-12">
-                    <Link href="/" className="text-blue-800 font-bold hover:underline">
-                        &larr; Kembali ke Halaman Utama
+                    <Link href={backUrl} className="text-blue-800 font-bold hover:underline">
+                        &larr; Kembali ke Halaman Undangan
                     </Link>
                 </div>
             </main>

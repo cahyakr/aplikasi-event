@@ -7,6 +7,7 @@ import Link from 'next/link';
 interface DownloadSectionProps {
   bukuSakuUrl?: string | null;
   agendaUrl?: string | null;
+  guestSlug: string;
 }
 
 const DownloadButton = ({ href, label }: { href: string, label: string }) => (
@@ -22,7 +23,7 @@ const DownloadButton = ({ href, label }: { href: string, label: string }) => (
   </a>
 );
 
-export default function DownloadSection({ bukuSakuUrl, agendaUrl }: DownloadSectionProps) {
+export default function DownloadSection({ bukuSakuUrl, agendaUrl, guestSlug  }: DownloadSectionProps) {
   if (!bukuSakuUrl && !agendaUrl) {
     return null;
   }
@@ -33,7 +34,7 @@ export default function DownloadSection({ bukuSakuUrl, agendaUrl }: DownloadSect
         {bukuSakuUrl && <DownloadButton href={bukuSakuUrl} label="DOWNLOAD BUKU SAKU" />}
         {agendaUrl && <DownloadButton href={agendaUrl} label="DOWNLOAD AGENDA" />}
         <Link
-          href="/materi"
+          href={`/materi?from=${guestSlug}`}
           className="flex items-center justify-center gap-3 w-full bg-blue-800 text-white font-bold text-center py-4 px-6 rounded-lg hover:bg-blue-900 transition-colors duration-300 shadow-lg"
         >
           <BookOpen size={20} />
