@@ -1,13 +1,12 @@
 // src/components/DownloadSection.tsx
 'use client';
 
-import { Download } from 'lucide-react';
+import { Download, BookOpen } from 'lucide-react';
+import Link from 'next/link';
 
-// Tentukan tipe props untuk menerima URL dari page.tsx
 interface DownloadSectionProps {
   bukuSakuUrl?: string | null;
   agendaUrl?: string | null;
-  materiUrl?: string | null;
 }
 
 const DownloadButton = ({ href, label }: { href: string, label: string }) => (
@@ -15,7 +14,7 @@ const DownloadButton = ({ href, label }: { href: string, label: string }) => (
     href={href}
     target="_blank"
     rel="noopener noreferrer"
-    download 
+    download
     className="flex items-center justify-center gap-3 w-full bg-blue-800 text-white font-bold text-center py-4 px-6 rounded-lg hover:bg-blue-900 transition-colors duration-300 shadow-lg"
   >
     <Download size={20} />
@@ -23,8 +22,8 @@ const DownloadButton = ({ href, label }: { href: string, label: string }) => (
   </a>
 );
 
-export default function DownloadSection({ bukuSakuUrl, agendaUrl, materiUrl }: DownloadSectionProps) {
-  if (!bukuSakuUrl && !agendaUrl && !materiUrl) {
+export default function DownloadSection({ bukuSakuUrl, agendaUrl }: DownloadSectionProps) {
+  if (!bukuSakuUrl && !agendaUrl) {
     return null;
   }
 
@@ -33,7 +32,13 @@ export default function DownloadSection({ bukuSakuUrl, agendaUrl, materiUrl }: D
       <div className="space-y-4 max-w-lg mx-auto">
         {bukuSakuUrl && <DownloadButton href={bukuSakuUrl} label="DOWNLOAD BUKU SAKU" />}
         {agendaUrl && <DownloadButton href={agendaUrl} label="DOWNLOAD AGENDA" />}
-        {materiUrl && <DownloadButton href={materiUrl} label="DOWNLOAD MATERI" />}
+        <Link
+          href="/materi"
+          className="flex items-center justify-center gap-3 w-full bg-blue-800 text-white font-bold text-center py-4 px-6 rounded-lg hover:bg-blue-900 transition-colors duration-300 shadow-lg"
+        >
+          <BookOpen size={20} />
+          LIHAT & UNDUH MATERI
+        </Link>
       </div>
     </section>
   );
