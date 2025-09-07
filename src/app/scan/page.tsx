@@ -85,9 +85,9 @@ export default function ScanPage() {
             ) : (
               <XCircle className="text-red-500" size={100} />
             )}
-            <h1 className="text-4xl font-bold mt-6">{scanResult.message}</h1>
+            <h1 className="text-2xl font-bold mt-6">{scanResult.message}</h1>
             {scanResult.name && (
-              <p className="text-3xl text-brand-yellow font-semibold mt-1">{scanResult.name}</p>
+              <p className="text-3xl text-yellow font-semibold mt-1">{scanResult.name}</p>
             )}
             {scanResult.tableNumber && (
               <p className="text-xl text-gray-300 mt-2">
