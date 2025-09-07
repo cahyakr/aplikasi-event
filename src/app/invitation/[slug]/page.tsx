@@ -74,7 +74,7 @@ export default async function InvitationPage({ params }: PageProps) {
   const gmapsUrl = "https://maps.app.goo.gl/4xFS13Kx4MZaG8ss5";
 
   return (
-    <InvitationCover guestName={guest.nama}>
+    <InvitationCover guestName={guest.nama} noMeja={guest.no_meja}>
       <div
         className="min-h-screen text-gray-700 font-sans"
         style={{

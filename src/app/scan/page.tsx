@@ -11,6 +11,7 @@ type ScanResult = {
   status: 'success' | 'error';
   message: string;
   name?: string;
+  tableNumber?: string | number;
 };
 
 export default function ScanPage() {
@@ -19,7 +20,7 @@ export default function ScanPage() {
 
   const handleScanSuccess = async (decodedUrl: string) => {
     setIsLoading(true);
-    
+
     try {
       // Panggil API menggunakan URL dari hasil scan
       const response = await fetch(decodedUrl);
@@ -30,7 +31,7 @@ export default function ScanPage() {
       }
 
       // Tampilkan hasil sukses
-      setScanResult({ status: 'success', message: 'Kehadiran Berhasil!', name: result.guestName });
+      setScanResult({ status: 'success', message: 'Kehadiran Berhasil!', name: result.guestName, tableNumber: result.tableNumber });
 
     } catch (err: any) {
       // Tampilkan hasil error
@@ -39,7 +40,7 @@ export default function ScanPage() {
       setIsLoading(false);
     }
   };
-  
+
   const handleScanFailure = (error: string) => {
     // Bisa digunakan untuk menampilkan error minor, misal QR tidak terbaca
     console.error(error);
@@ -87,6 +88,11 @@ export default function ScanPage() {
             <h1 className="text-4xl font-bold mt-6">{scanResult.message}</h1>
             {scanResult.name && (
               <p className="text-3xl text-brand-yellow font-semibold mt-1">{scanResult.name}</p>
+            )}
+            {scanResult.tableNumber && (
+              <p className="text-xl text-gray-300 mt-2">
+                No. Meja: {scanResult.tableNumber}
+              </p>
             )}
             <button
               onClick={resetScanner}

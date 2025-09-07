@@ -8,10 +8,11 @@ import { Mail } from 'lucide-react';
 
 type Props = {
   guestName: string;
+  noMeja: string;
   children: React.ReactNode;
 };
 
-export default function InvitationCover({ guestName, children }: Props) {
+export default function InvitationCover({ guestName, noMeja, children }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
   if (isOpen) {
@@ -57,6 +58,7 @@ export default function InvitationCover({ guestName, children }: Props) {
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <p className="text-xl text-gray mb-2">Kepada Yth.</p>
         <p className="text-3xl font-bold text-brand-primary mb-2">{guestName}</p>
+        <p className="text-2xl font-bold text-grey mb-2">Nomor Meja : {noMeja}</p>
       </div>
 
       <button
