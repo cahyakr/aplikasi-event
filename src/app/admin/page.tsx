@@ -1,7 +1,7 @@
 // src/app/admin/page.tsx
-'use client'; // 1. Ini yang paling penting: mengubahnya menjadi Client Component
+'use client'; 
 
-import { useState, useEffect } from 'react'; // Import hooks dari React
+import { useState, useEffect } from 'react'; 
 import { supabase } from "@/app/lib/supabaseClient";
 import { Guest } from "@/types";
 import Link from "next/link";
@@ -9,19 +9,19 @@ import ExportButton from "@/components/ExportButton";
 import ImportButton from "@/components/ImportButton";
 import DeleteButton from "@/components/DeleteButton";
 import ShareWhatsAppButton from "@/components/ShareWhatsAppButton";
-import Modal from '@/components/Modal'; // Impor komponen Modal
-import GuestForm from '@/components/GuestForm'; // Impor komponen Form
-import { PlusCircle, Edit, Users, UserCheck } from "lucide-react";
+import Modal from '@/components/Modal'; 
+import GuestForm from '@/components/GuestForm'; 
+import { PlusCircle, Edit, Users, UserCheck, RotateCcw } from "lucide-react";
 
 export default function AdminPage() {
-    // 2. State untuk mengelola data, loading, dan status modal
+    
     const [tamu, setTamu] = useState<Guest[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [origin, setOrigin] = useState('');
 
-    // 3. Pindahkan logic fetch data ke useEffect agar berjalan di client
+    
     const fetchGuests = async () => {
         setLoading(true);
         const { data, error } = await supabase
@@ -38,12 +38,11 @@ export default function AdminPage() {
     };
 
     useEffect(() => {
-        // Dapatkan origin URL saat komponen sudah siap di browser
+        
         setOrigin(window.location.origin);
         fetchGuests();
     }, []);
 
-    // 4. Buat fungsi untuk menangani state modal
     const handleEditClick = (guest: Guest) => {
         setSelectedGuest(guest);
         setIsModalOpen(true);
@@ -60,6 +59,34 @@ export default function AdminPage() {
         fetchGuests(); 
     };
 
+    const handleResetKehadiran = async () => {
+        const isConfirmed = window.confirm(
+            'Anda yakin ingin mereset status kehadiran SEMUA tamu menjadi "Belum Hadir"? Aksi ini tidak dapat dibatalkan.'
+        );
+
+        if (isConfirmed) {
+            setLoading(true);
+            try {
+                // Update semua baris di tabel 'tamu' yang status hadirnya true
+                const { error } = await supabase
+                    .from('tamu')
+                    .update({ hadir: false })
+                    .eq('hadir', true);
+
+                if (error) {
+                    throw error;
+                }
+
+                alert('Status kehadiran semua tamu berhasil direset.');
+                fetchGuests(); 
+            } catch (error: any) {
+                console.error("Gagal mereset kehadiran:", error);
+                alert(`Terjadi kesalahan: ${error.message}`);
+                setLoading(false);
+            }
+        }
+    };
+
     const totalTamu = tamu.length;
     const jumlahHadir = tamu.filter(t => t.hadir).length;
 
@@ -73,8 +100,15 @@ export default function AdminPage() {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                         <h1 className="text-4xl font-bold text-gray-800">Dashboard Admin</h1>
                         <div className="flex flex-wrap gap-4">
+
                             <ImportButton onImportSuccess={fetchGuests} />
                             <ExportButton data={tamu} />
+                            <button
+                                onClick={handleResetKehadiran}
+                                className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700"
+                            >
+                                <RotateCcw size={18} /> Reset Kehadiran
+                            </button>
                             <button 
                                 onClick={handleAddClick} 
                                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700"
@@ -100,7 +134,6 @@ export default function AdminPage() {
                         </div>
                     </div>
 
-                    {/* Tabel Tamu */}
                     <div className="bg-white shadow-lg rounded-xl overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left text-gray-700">
@@ -136,7 +169,6 @@ export default function AdminPage() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex justify-center items-center gap-4">
-                                                    {/* 5. Tombol Edit sekarang adalah <button> yang memanggil fungsi onClick */}
                                                     <button onClick={() => handleEditClick(guest)} className="text-blue-600 hover:text-blue-800" title="Edit Tamu">
                                                         <Edit size={16} />
                                                     </button>
@@ -152,7 +184,6 @@ export default function AdminPage() {
                 </div>
             </main>
 
-            {/* 6. Modal akan muncul di sini saat isModalOpen bernilai true */}
             <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
                 <GuestForm initialData={selectedGuest} onSuccess={handleCloseModal} />
             </Modal>
