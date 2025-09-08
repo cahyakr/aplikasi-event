@@ -31,7 +31,7 @@ export default function ScanPage() {
       }
 
       // Tampilkan hasil sukses
-      setScanResult({ status: 'success', message: 'Kehadiran Berhasil!', name: result.guestName, tableNumber: result.tableNumber });
+      setScanResult({ status: 'success', message: 'Kehadiran Berhasil!', name: result.guestName, tableNumber: result.no_meja });
 
     } catch (err: any) {
       // Tampilkan hasil error
@@ -87,11 +87,12 @@ export default function ScanPage() {
             )}
             <h1 className="text-2xl font-bold mt-6">{scanResult.message}</h1>
             {scanResult.name && (
-              <p className="text-3xl text-yellow font-semibold mt-1">{scanResult.name}</p>
+              <p className="text-3xl text-white font-semibold mt-1">{scanResult.name}</p>
             )}
             {scanResult.tableNumber && (
               <p className="text-xl text-gray-300 mt-2">
                 No. Meja: {scanResult.tableNumber}
+                                                
               </p>
             )}
             <button
