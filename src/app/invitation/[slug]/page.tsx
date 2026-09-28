@@ -12,6 +12,8 @@ import LocationMap from '@/components/LocationMap';
 import Countdown from '@/components/Countdown';
 import DownloadSection from '@/components/DownloadSection';
 
+export const dynamic = 'force-dynamic';
+
 // Fungsi untuk mengambil data tamu spesifik
 async function getGuestData(guestSlug: string) {
   const { data: guest } = await supabase
